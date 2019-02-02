@@ -13,33 +13,33 @@ def main():
 	camera_recog()
 
 def camera_recog():
-	for file in glob.glob('./detect/*.jpg'):
+	for file in glob.glob('./detect/*.jpg'):			# Reads all images for detection
 		image = cv2.imread(file)
-		rects, landmarks = face_detect.detect_face(image,80)
+		rects, landmarks = face_detect.detect_face(image,80)	# Detects all faces present in the image
 		aligns = []
 		positions = []
 		for (i, rect) in enumerate(rects):
-			aligned_face, face_pos = aligner.align(160,image,landmarks[i])
+			aligned_face, face_pos = aligner.align(160,image,landmarks[i])	# Aligns and crops the faces
 			if len(aligned_face) == 160 and len(aligned_face[0]) == 160:
 				aligns.append(aligned_face)
 				positions.append(face_pos)
 			else: 
 				print("Align face failed")      
 		if(len(aligns) > 0 and face_pos=='Center'):
-			features_arr = extract_feature.get_features(aligns)
-			recog_data = findPeople(features_arr,positions)
+			features_arr = extract_feature.get_features(aligns)		# Extracts the features of th detected faces
+			recog_data = findPeople(features_arr,positions)			# Calls the findPeople function to recognize the detected faces
 			print(recog_data)
-			for (i,rect) in enumerate(rects):
+			for (i,rect) in enumerate(rects):						# Makes bounding boxes around the faces with the name and percent recognition
 				cv2.rectangle(image,(rect[0],rect[1]),(rect[0] + rect[2],rect[1]+rect[3]),(255,0,0),1)
 				cv2.putText(image,recog_data[i][0]+" - "+str(recog_data[i][1])+"%",(rect[0],rect[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),1,cv2.LINE_AA)
 
-		cv2.imwrite(str(recog_data[0])+'.jpg',image)
+		cv2.imwrite(str(recog_data[0])+'.jpg',image)				# Makes a copy of the said image with boxes 
 		cv2.imshow("Recognition",image)
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord("q" or "Q"):
 			break
 
-def findPeople(features_arr, positions, thres = 0.8, percent_thres = 80):
+def findPeople(features_arr, positions, thres = 0.8, percent_thres = 80): # Function to find whether detected faces are present in database
 
 	f = open('./facerec_new.txt','r')
 	data_set = json.loads(f.read())
@@ -50,18 +50,15 @@ def findPeople(features_arr, positions, thres = 0.8, percent_thres = 80):
 		for person in data_set.keys():
 			person_data = data_set[person][positions[i]]
 			for data in person_data:
-				distance = np.sqrt(np.sum(np.square(data-features_128D)))
-				if(distance < smallest):
+				distance = np.sqrt(np.sum(np.square(data-features_128D)))		# Calculates the distance of the features with the ones in the database
+				if(distance < smallest):										# Assigns the smallest possible distance/similarity with the features in the database
 					smallest = distance
 					result = person
 				print("smallest=",smallest)
-		percentage =  min(100, 100 * thres / smallest)
-		if percentage <= percent_thres:
+		percentage =  min(100, 100 * thres / smallest)			# Calculates the % simlarity of the given face with the ones stored in the database
+		if percentage <= percent_thres:							# If below threshold, person not recognized i.e. Unknown
 			result = "Unknown"
-		
-		else:
-			result=person
-		returnRes.append((result,percentage))
+		returnRes.append((result,percentage))					# Returns the name of the person recognized (or Unknown if not) and the percentage
 	return returnRes
 
 if __name__ == '__main__':

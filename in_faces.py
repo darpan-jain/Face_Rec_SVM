@@ -11,7 +11,6 @@ def main():
 	manual_data()
 
 def manual_data():
-	count=1
 	for file in glob.glob('./faces/*.jpg'):
 		image = cv2.imread(file)				# Reading each image in the training folder
 		key = cv2.waitKey(1) & 0xFF
@@ -42,9 +41,7 @@ def manual_data():
 		f = open('./facerec_new.txt', 'w')
 		f.write(json.dumps(data_set))			# Writes the name and corresponding embeddings in a text 
 												# file which serves as the reference for recognition
-		print('User %d added\n'%count)
-		count+=1
-	print('%d users added'%count)
+
 
 if __name__ == '__main__':
 	FRGraph = FaceRecGraph()
